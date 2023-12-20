@@ -1,2 +1,94 @@
-# MoonSwap_PYConsole
-This is the Console for MoonSwap, written by Python.
+# MoonSwap
+
+```
+# 一、 前言
+
+1. 需求基本信息
+>产品经理：皓然
+>需求优先级：中
+2. 变更日志
+|**日期**|**版本号**|**变更人**|**变更内容**|
+|:----|:----|:----|:----|
+|12/1|nil|皓然|创建软件文档|
+|12/20|v1.0|八月|Console(Python)|
+|    |    |    |    |
+
+# 二、 需求背景
+
+1. 要解决的问题
+解决服务器被DDos时客户机无法正常联网的问题
+
+# 三、需求目标
+
+服务器遭受DDos攻击时，自动或者手动将【母鸡的RDP等端口、客户机映射出去的端口】通过内网的Frpc和千兆非公网家庭管带穿透出去，由外网的Frps服务器继续为母鸡RDP和客户机提供网络支持。
+
+# 四、功能详细说明
+
+## 实现逻辑
+
+1. 人工开启或自动检测网络情况，若发现DDos等攻击，则开始执行主程序。
+2. 获取客户机的端口映射列表，取得主机名、映射名和端口号，存储于临时文件或sqlite中。
+3. 人工操作或自动提取sqlite中的数据，根据Frpc指定的模版填充数据，并且追加到$主机名.toml中（新建一个配置文件，根据文件架构小节来追加配置）。
+```plain
+# 这些内容需要写入VDSxxxxxx.toml中单独存放
+[[proxies]]
+name = "$主机名+$本地映射端口"
+type = " $连接类型(TCP/UDP)"
+localIP = "$虚拟路由器内网IP"
+localPort = $本地映射端口
+remotePort = $随机端口号
+```
+
+4. remotePort为不重复的，1000-2000的端口号，生成后写入sqlite。
+5. 每次新增一批次的toml配置文件就热重载一次Frpc服务，并且在控制台输出表格（主机名+映射名+穿透后的端口），以便运维收集数据以及提供给客户。
+6. 当DDos结束后，可人工关闭主程序，所有添加的toml配置文件清除，重载或者直接关闭Frpc服务。
+
+### 元数据的爬取
+
+请求地址：[http:](http:)
+
+参数：luci_username=root&luci_password=路由op密码
+
+映射规则列表（用GET请求）：[http:](http:)
+
+POST登录之后带cookie来get这个地址，就是完整的列表了
+
+## Frpc重点
+
+### 文件架构
+
+```plain
+[FrpcHost frp_0.52.3_linux_amd64]# tree
+.
+├── frpc        #frpc主程序，需要控制其运行
+├── frpc.log    #日志目录，可打印最新日志在终端
+├── frpc.toml   #frpc配置文件，不需要更改
+├── frps        #frps主程序，不需要控制执行
+├── frps.toml   #frpc配置文件，不需要更改
+├── LICENSE     #源码协议
+└── swapmoon    #代理配置文件拆分的文件夹
+    ├── VDS7282121800.toml   #代理文件(文件名格式只要方便分辨即可)
+    ├── VDSxxxxxx.toml       #通过模版继续自动生成代理文件
+    └── xxx.toml             #代理文件n
+```
+
+### 热重载
+
+`frpc reload -c ./frpc.toml`
+
+## Frps重点
+
+### 端口白名单
+
+为了防止端口被滥用，可以手动指定允许哪些端口被使用，在服务端配置中通过 `allowPorts` 来指定：
+
+```plain
+allowPorts = [
+  { start = 1000, end = 2000 },
+  { single = 3001 },
+]
+```
+
+```
+
+```

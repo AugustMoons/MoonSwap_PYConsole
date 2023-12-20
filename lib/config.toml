@@ -1,0 +1,12 @@
+[[values]]
+enabled = "F"
+num = 0
+useremoteport = []
+frptomllist = []
+
+[[frpcdata]]
+serverAddr = "127.0.0.1"
+includes = [ "C:/Users/Administrator/Desktop/MoonSwap/frp_0.52.3_windows_amd64/frpc.toml",]
+frp_path = "C:/Users/Administrator/Desktop/MoonSwap/frp_0.52.3_windows_amd64"
+token = "12345678"
+
